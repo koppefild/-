@@ -2,7 +2,7 @@ let schedule = [];
 let currentTab = 'month';
 const audio = new Audio('data:audio/wav;base64,//uQRAAAAWMSLWuDQAAA...'); // короткий бип (упрощённо)
 
-// Проверка уведомлений
+
 if ('Notification' in window) {
   document.getElementById('notifyBtn').style.display = 'block';
 }
@@ -14,12 +14,12 @@ document.getElementById('notifyBtn').addEventListener('click', () => {
     });
   }
 });
-// Преобразуем файл в Image для обработки
+
 const img = new Image();
 img.src = URL.createObjectURL(file);
 await img.decode();
 
-// Создаём canvas для коррекции
+
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = img.width;
@@ -27,12 +27,12 @@ canvas.height = img.height;
 ctx.filter = 'contrast(150%) brightness(110%)';
 ctx.drawImage(img, 0, 0);
 
-// Конвертируем обратно в Blob
+
 const correctedBlob = await new Promise(resolve =>
   canvas.toBlob(resolve, 'image/jpeg', 0.95)
 );
 
-// Загрузка изображения
+
 document.getElementById('imageInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -54,7 +54,7 @@ document.getElementById('imageInput').addEventListener('change', async (e) => {
   }
 });
 
-// Парсинг текста
+
 function parseSchedule(text) {
   return text.split('\n')
     .map(line => line.trim().split(/\s+/))
@@ -69,7 +69,7 @@ function parseSchedule(text) {
     }));
 }
 
-// Сохранение в localStorage
+
 function saveToStorage() {
   localStorage.setItem('namazSchedule', JSON.stringify(schedule));
 }
@@ -78,7 +78,7 @@ function loadFromStorage() {
   if (saved) schedule = JSON.parse(saved);
 }
 
-// Переключение вкладок
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     currentTab = btn.dataset.tab;
@@ -88,7 +88,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// Рендеринг текущего вида
+
 function renderCurrentView() {
-  loadFromStorage(); // подгружаем из хранилища
+  loadFromStorage(); 
   if (currentTab === 'month') {
