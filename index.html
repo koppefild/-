@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Намаз: расписание по фото</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+</head>
+<body>
+  <div class="container">
+    <h1>Расписание намаза по фото</h1>
+
+    <!-- Уведомления -->
+    <button id="notifyBtn" style="display: none;">Разрешить уведомления</button>
+    <div id="notifyStatus"></div>
+
+    <!-- Загрузка изображения -->
+    <input type="file" id="imageInput" accept="image/*" hidden>
+    <label for="imageInput" class="btn">Загрузить фото таблицы</label>
+
+    <!-- Табы -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="month">Месяц</button>
+      <button class="tab-btn" data-tab="day">День</button>
+    </div>
+
+    <!-- Результат -->
+    <div id="result"></div>
+
+    <!-- Селектор даты -->
+    <div id="dateSelector" style="display: none; margin: 20px 0;">
+      <label>Дата:
+        <select id="dayPicker"></select>
+      </label>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js/dist/tesseract.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
