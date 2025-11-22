@@ -14,6 +14,23 @@ document.getElementById('notifyBtn').addEventListener('click', () => {
     });
   }
 });
+// Преобразуем файл в Image для обработки
+const img = new Image();
+img.src = URL.createObjectURL(file);
+await img.decode();
+
+// Создаём canvas для коррекции
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = img.width;
+canvas.height = img.height;
+ctx.filter = 'contrast(150%) brightness(110%)';
+ctx.drawImage(img, 0, 0);
+
+// Конвертируем обратно в Blob
+const correctedBlob = await new Promise(resolve =>
+  canvas.toBlob(resolve, 'image/jpeg', 0.95)
+);
 
 // Загрузка изображения
 document.getElementById('imageInput').addEventListener('change', async (e) => {
