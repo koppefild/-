@@ -1,8 +1,10 @@
 let schedule = [];
 let currentTab = 'month';
-const audio = new Audio('data:audio/wav;base64,//uQRAAAAWMSLWuDQAAA...'); // короткий бип (упрощённо)
 
-// Проверка уведомлений
+// Звуковой сигнал
+const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAATZ2P//f39/QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+
+// Уведомления
 if ('Notification' in window) {
   document.getElementById('notifyBtn').style.display = 'block';
 }
@@ -21,35 +23,54 @@ document.getElementById('imageInput').addEventListener('change', async (e) => {
   if (!file) return;
 
   try {
+    // Предобработка изображения
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.filter = 'contrast(150%) brightness(110%)';
+    ctx.drawImage(img, 0, 0);
+    const correctedBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+
+    // OCR
     const worker = Tesseract.createWorker();
     await worker.load();
     await worker.loadLanguage('rus');
     await worker.initialize('rus');
-    const { data } = await worker.recognize(file);
+    const { data } = await worker.recognize(correctedBlob);
     await worker.terminate();
 
+    // Парсинг и рендеринг
     schedule = parseSchedule(data.text);
     saveToStorage();
     renderCurrentView();
     startNotifications();
   } catch (err) {
-    document.getElementById('result').innerHTML = `<p style="color:red">Ошибка: ${err.message}</p>`;
+    document.getElementById('result').innerHTML = `<p style="color:red">Ошибка: ${err}</p>`;
   }
 });
 
-// Парсинг текста
+// Парсинг расписания
 function parseSchedule(text) {
-  return text.split('\n')
-    .map(line => line.trim().split(/\s+/))
-    .filter(parts => parts.length >= 6)
-    .map(parts => ({
-      date: parts[0],
-      fajr: parts[1],
-      zuhr: parts[2],
-      asr: parts[3],
-      maghrib: parts[4],
-      isha: parts[5]
-    }));
+  const lines = text.split(/\r?\n/).filter(line => line.trim());
+  const result = [];
+  for (const line of lines) {
+    const match = line.match(/(\d{1,2}\.\d{1,2})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/);
+    if (match) {
+      result.push({
+        date: match[1],
+        fajr: match[2],
+        zuhr: match[3],
+        asr: match[4],
+        maghrib: match[5],
+        isha: match[6]
+      });
+    }
+  }
+  return result;
 }
 
 // Сохранение в localStorage
@@ -57,21 +78,55 @@ function saveToStorage() {
   localStorage.setItem('namazSchedule', JSON.stringify(schedule));
 }
 function loadFromStorage() {
-  const saved = localStorage.getItem('namazSchedule');
-  if (saved) schedule = JSON.parse(saved);
+  schedule = JSON.parse(localStorage.getItem('namazSchedule')) || [];
+}
+
+// Рендеринг
+function renderCurrentView() {
+  loadFromStorage();
+  if (currentTab === 'month') {
+    renderMonth();
+  } else {
+    renderDay();
+  }
+}
+function renderMonth() {
+  const html = `
+    <table>
+      <thead>
+        <tr><th>Дата</th><th>Фаджр</th><th>Зухр</th><th>Аср</th><th>Магриб</th><th>Иша</th></tr>
+      </thead>
+      <tbody>${schedule.map(d => `<tr><td>${d.date}</td><td>${d.fajr}</td><td>${d.zuhr}</td><td>${d.asr}</td><td>${d.maghrib}</td><td>${d.isha}</td></tr>`).join('')}</tbody>
+    </table>`;
+  document.getElementById('result').innerHTML = html;
+}
+function renderDay() {
+  // ... (реализуйте выбор даты)
+}
+
+// Уведомления
+function startNotifications() {
+  setInterval(() => {
+    const now = new Date();
+    schedule.forEach(day => {
+      const times = ['fajr', 'zuhr', 'asr', 'maghrib', 'isha'];
+      times.forEach(time => {
+        const prayerTime = new Date(now.getFullYear(), now.getMonth(), parseInt(day.date.split('.')[0]), ...day[time].split(':').map(Number));
+        if (prayerTime.getTime() === now.getTime()) {
+          Notification.requestPermission().then(() => {
+            new Notification('Намаз', { body: `Время намаза "${time}"` });
+            audio.play();
+          });
+        }
+      });
+    });
+  }, 60000);
 }
 
 // Переключение вкладок
-document.querySelectorAll('.tab-btn').forEach(btn => {
+document.querySelectorAll('.tab-btn').forEach(btn => 
   btn.addEventListener('click', () => {
     currentTab = btn.dataset.tab;
-    btn.classList.add('active');
-    document.querySelector('.tab-btn.active')?.classList.remove('active');
     renderCurrentView();
-  });
-});
-
-// Рендеринг текущего вида
-function renderCurrentView() {
-  loadFromStorage(); // подгружаем из хранилища
-  if (currentTab === 'month') {
+  })
+);
