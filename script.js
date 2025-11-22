@@ -92,4 +92,4 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function renderCurrentView() {
   loadFromStorage(); 
   if (currentTab === 'month') {}
-  
+}
